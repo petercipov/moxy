@@ -6,14 +6,14 @@ import { MockStore, BEGIN_VERSION } from '../mock/store/Store'
 import { Subscription } from 'rxjs'
 import { InMemoryMatcher } from '../mock/InMemoryMatcher'
 
-export interface ResponseHandler {
-  mockResponse (result: MockResponse): Promise<void>
-  undecided (mockIds: string[]): Promise<void>
+export interface HTTPHandler {
+  mockResponse (request: IncomingRequest, result: MockResponse): Promise<void>
+  undecided (request: IncomingRequest, mockIds: string[]): Promise<void>
   passTrough (request: IncomingRequest): Promise<void>
 }
 
 @Injectable()
-export class RequestInterceptor implements OnModuleInit, OnModuleDestroy {
+export class HTTPInterceptor implements OnModuleInit, OnModuleDestroy {
 
   private subscription: Subscription | undefined
   private matcher: InMemoryMatcher
@@ -25,14 +25,14 @@ export class RequestInterceptor implements OnModuleInit, OnModuleDestroy {
     this.matcher = new InMemoryMatcher()
   }
 
-  async intercept (request: IncomingRequest, handler: ResponseHandler) {
+  async intercept (request: IncomingRequest, handler: HTTPHandler) {
     const result = await this.matcher.match(request)
     if (result.length === 0) {
       await handler.passTrough(request)
     } else if (result.length === 1) {
-      await handler.mockResponse(result[0])
+      await handler.mockResponse(request, result[0])
     } else {
-      await handler.undecided(result.map(resp => resp.mockId))
+      await handler.undecided(request, result.map(resp => resp.mockId))
     }
   }
 

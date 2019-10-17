@@ -15,6 +15,10 @@ export const mockStoreProvider: Provider<Promise<MockStore>> = {
     const migrations = config.requireString('MOCK_STORE_MIGRATIONS_DIR')
     const path = dirName(file)
     await mkdir(path)
-    return new SQLiteStore(file, migrations, logger)
+    const store = new SQLiteStore(file, migrations, logger)
+
+    await store.init()
+
+    return store
   }
 }

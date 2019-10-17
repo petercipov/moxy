@@ -12,7 +12,7 @@ export const loggerProvider: Provider = {
   provide: LOGGER,
 
   useFactory: async (): Promise<Logger> => {
-    const name = 'nest.js tdd base'
+    const name = 'moxy'
     const level = 'info'
     const loggerOptions: BunyanLogger.LoggerOptions = {
       name,

@@ -7,7 +7,7 @@ import { HistoryModule } from './history/module'
 import { MockModule } from './mock/module'
 
 @Module({
-  imports: [ CommonModule, HttpInterfaceModule, AdminInterfaceModule, HistoryModule, MockModule ],
+  imports: [ CommonModule, AdminInterfaceModule, HistoryModule, MockModule, HttpInterfaceModule ],
   providers: [ AppInit ]
 })
 export class AppModule implements NestModule {

@@ -7,7 +7,7 @@ import { ConfigService } from '../common/config'
 import { IncomingRequest, MockResponse } from '../mock/Mock'
 import v4 from 'uuid/v4'
 import { IncomingBody } from '../mock/matchers/BodyMatcher'
-import { ResponseHandler } from '../interceptor/RequestInterceptor'
+import { HTTPHandler, HTTPInterceptor } from './HTTPInterceptor'
 
 @Injectable({
   scope: Scope.DEFAULT
@@ -15,22 +15,31 @@ import { ResponseHandler } from '../interceptor/RequestInterceptor'
 export class HttpInterface implements OnModuleInit, OnModuleDestroy {
 
   private server: http.Server
+  private requestIdName: string
 
   constructor (
     @Inject(LOGGER) private logger: Logger,
+    private readonly interceptor: HTTPInterceptor,
     private readonly config: ConfigService
   ) {
     this.server = http.createServer(this.handle.bind(this))
   }
 
   private urlFromOverride (req: http.IncomingMessage) {
-    const origin = req.headers['x-moxy-origin']
-    if (! origin) {
+    const originRaw = firstHeader(req, 'x-moxy-origin')
+    if (! originRaw) {
       return
     }
 
+    const origin = originRaw.endsWith('/')
+      ? originRaw.substring(0, originRaw.length - 1)
+      : originRaw
+
+    const overriddenUrl = `${origin}${req.url}`
+
+    delete req.headers['host']
     delete req.headers['x-moxy-origin']
-    return parse(`${origin}${req.url}`, true)
+    return parse(overriddenUrl, true)
   }
 
   private urlFormRequest (req: http.IncomingMessage) {
@@ -48,7 +57,9 @@ export class HttpInterface implements OnModuleInit, OnModuleDestroy {
   }
 
   async handle (req: http.IncomingMessage, res: http.ServerResponse) {
-    this.logger.info(`Incoming ${req.url}`)
+    const id = this.getRequestId(req)
+    const logger = this.logger.child({ id })
+    const handler = new HTTPResponseHandler(logger, res, this.requestIdName)
 
     let inUrl = this.urlFromOverride(req)
     if (! inUrl) {
@@ -56,9 +67,7 @@ export class HttpInterface implements OnModuleInit, OnModuleDestroy {
     }
 
     if (!inUrl || ! req.method || !inUrl.pathname || !inUrl.host || !inUrl.protocol) {
-      res.writeHead(400, { 'Content-Type': 'text/plain' })
-      res.end('missing some parts')
-      return
+      return handler.badRequest(id, 'missing some parts')
     }
     const scheme = inUrl.protocol.split(':')[0]
 
@@ -72,16 +81,12 @@ export class HttpInterface implements OnModuleInit, OnModuleDestroy {
           port = '443'
           break
         default:
-          res.writeHead(400, { 'Content-Type': 'text/plain' })
-          res.end(`Unknown port ${port}`)
-          return
+          return handler.badRequest(id, `Unknown port ${port}`)
       }
     }
 
-    const idHeaderName = this.config.requireString('HTTP_INTERFACE_REQUEST_ID_HEADER')
-
     const incomingRequest: IncomingRequest = {
-      id: [req.headers[idHeaderName] || v4()].flat()[0],
+      id,
       url: {
         method: req.method,
         scheme,
@@ -94,13 +99,18 @@ export class HttpInterface implements OnModuleInit, OnModuleDestroy {
       body: new MemoizeIncomingBody(req)
     }
 
-    console.log(incomingRequest)
+    await this.interceptor.intercept(incomingRequest, handler)
+  }
 
-    res.writeHead(200, { 'Content-Type': 'text/plain' })
-    res.end('okay')
+  getRequestId (req: http.IncomingMessage): string {
+    const header = firstHeader(req, this.requestIdName)
+    return !header
+      ? v4()
+      : header
   }
 
   onModuleInit () {
+    this.requestIdName = this.config.requireString('HTTP_INTERFACE_REQUEST_ID_HEADER')
     const port = this.config.get('HTTP_INTERFACE_PORT')
     return new Promise((resolve, reject) => {
       if (this.server.listening) {
@@ -172,13 +182,24 @@ export class MemoizeIncomingBody implements IncomingBody {
   }
 }
 
-export class HTTPResponseHandle implements ResponseHandler {
+export class HTTPResponseHandler implements HTTPHandler {
 
   constructor (
-    private res: http.ServerResponse
+    private readonly logger: Logger,
+    private readonly res: http.ServerResponse,
+    private readonly requestIdName: string
   ) {}
 
-  async undecided (mockIds: string[]) {
+  async badRequest (requestId: string, message: string) {
+    this.logger.info({ message },`HANDLER - Bad Request`)
+    this.res.setHeader(this.requestIdName, requestId)
+    this.res.writeHead(400, { 'Content-Type': 'text/plain' })
+    this.res.end(message)
+  }
+
+  async undecided (request: IncomingRequest, mockIds: string[]) {
+    this.logger.info(`HANDLER - Request response cannot be decided - HTTP 409 Conflict`)
+    this.res.setHeader(this.requestIdName, request.id)
     this.res.setHeader('x-moxy-conflicting', mockIds)
     this.res.writeHead(409).end()
   }
@@ -193,15 +214,24 @@ export class HTTPResponseHandle implements ResponseHandler {
       headers: request.headers,
       path
     }
-    const req = http.request(options, (res) => {
-      res.pipe(this.res)
-    })
+    this.logger.info({ options }, `HANDLER - Request ${request.url.scheme} pass through`)
 
-    const body = await request.body.value()
-    req.write(body)
+    const responseHandler = (res: http.IncomingMessage) => {
+      res.headers[this.requestIdName] = request.id
+      this.res.writeHead(res.statusCode || 404, res.statusMessage, res.headers)
+      res.pipe(this.res)
+    }
+
+    const req = request.url.scheme === 'http'
+    ? http.request(options, responseHandler)
+    : https.request(options, responseHandler)
+
+    req.write(await request.body.value())
   }
 
-  async mockResponse (result: MockResponse) {
+  async mockResponse (request: IncomingRequest, result: MockResponse) {
+    this.logger.info(`HANDLER - Request mocking`)
+    this.res.setHeader(this.requestIdName, request.id)
     this.res.setHeader('x-moxy-id', result.mockId)
     if (result.headers) {
       this.res.writeHead(result.status, result.headers)
@@ -215,4 +245,13 @@ export class HTTPResponseHandle implements ResponseHandler {
       this.res.end()
     }
   }
+}
+
+function firstHeader (req: http.IncomingMessage, name: string) {
+  const raw = req.headers[name]
+  return raw
+    ? Array.isArray(raw)
+      ? raw[0]
+      : raw
+    : undefined
 }

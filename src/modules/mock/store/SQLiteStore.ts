@@ -1,11 +1,11 @@
 import { open, Database } from 'sqlite'
 import { SQL } from 'sql-template-strings'
-import { OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+import { OnModuleDestroy } from '@nestjs/common'
 import { MockStore, VERSION, MocksDiff, MockDefinition, MockType, BEGIN_VERSION } from './Store'
 import { Subject, Observable } from 'rxjs'
 import { Logger } from '../../common/logger'
 
-export class SQLiteStore implements OnModuleInit, OnModuleDestroy, MockStore {
+export class SQLiteStore implements OnModuleDestroy, MockStore {
 
   private db: Database
   private readonly notifications = new Subject<VERSION>()
@@ -18,7 +18,7 @@ export class SQLiteStore implements OnModuleInit, OnModuleDestroy, MockStore {
 
   async load (version: VERSION): Promise<MocksDiff[]> {
     const result = await this.db.all(
-      SQL`SELECT id, type, def, FROM Def WHERE id > ? ORDER BY id ASC`,
+      `SELECT id, type, def FROM Def WHERE id > ? ORDER BY id ASC`,
       version
     )
 
@@ -67,9 +67,9 @@ export class SQLiteStore implements OnModuleInit, OnModuleDestroy, MockStore {
     return this.notifications
   }
 
-  async onModuleInit () {
+  async init () {
     const { path, migrationsPath } = this
-    this.db = await open(path)
+    this.db = await open(path, { verbose: true })
     await this.db.migrate({
       force: 'last',
       migrationsPath

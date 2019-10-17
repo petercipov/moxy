@@ -7,6 +7,7 @@ import { mockStoreProvider } from './store/Store.provider'
     mockStoreProvider
   ],
   exports: [
+    mockStoreProvider
   ]
 })
 export class MockModule {
