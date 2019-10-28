@@ -1,7 +1,7 @@
 import { IncomingHttpHeaders } from 'http'
 import { IncomingURL, UrlPattern } from '../../../../src/modules/mock/matchers/UrlMatcher'
 import { BodyPattern, IncomingBody } from '../../../../src/modules/mock/matchers/BodyMatcher'
-import { IncomingRequest } from '../../../../src/modules/mock/Mock'
+import { IncomingRequest, Mock } from '../../../../src/modules/mock/Mock'
 import { HeaderPattern } from '../../../../src/modules/mock/matchers/HeaderMatcher'
 
 export const JSON_AP_HEADERS: IncomingHttpHeaders = {
@@ -78,4 +78,17 @@ export const JSON_API_URL_MATCH_PATTERN: UrlPattern = {
 export const JSON_API_BODY_MATCH_PATTERN: BodyPattern = {
   type: 'regexp',
   value: 'doggie'
+}
+
+export const JSON_REQUEST_MOCK: Mock = {
+  id: 'some json mock id',
+  groupId: 'some json mock group id',
+  host: 'petstore.swagger.io',
+  pattern: {
+    url: JSON_API_URL_MATCH_PATTERN
+  },
+  response: {
+    type: 'static',
+    status: 200
+  }
 }

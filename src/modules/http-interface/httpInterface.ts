@@ -4,7 +4,7 @@ import * as http from 'http'
 import * as https from 'https'
 import { parse, URLSearchParams } from 'url'
 import { ConfigService } from '../common/config'
-import { IncomingRequest, MockResponse } from '../mock/Mock'
+import { IncomingRequest, Match } from '../mock/Mock'
 import v4 from 'uuid/v4'
 import { IncomingBody } from '../mock/matchers/BodyMatcher'
 import { HTTPHandler, HTTPInterceptor } from './HTTPInterceptor'
@@ -229,18 +229,19 @@ export class HTTPResponseHandler implements HTTPHandler {
     req.write(await request.body.value())
   }
 
-  async mockResponse (request: IncomingRequest, result: MockResponse) {
+  async mockResponse (request: IncomingRequest, result: Match) {
+    const { id, response } = result
     this.logger.info(`HANDLER - Request mocking`)
     this.res.setHeader(this.requestIdName, request.id)
-    this.res.setHeader('x-moxy-id', result.mockId)
-    if (result.headers) {
-      this.res.writeHead(result.status, result.headers)
+    this.res.setHeader('x-moxy-id', id)
+    if (response.headers) {
+      this.res.writeHead(response.status, response.headers)
     } else {
-      this.res.writeHead(result.status)
+      this.res.writeHead(response.status)
     }
 
-    if (result.body) {
-      this.res.end(result.body)
+    if (response.body) {
+      this.res.end(response.body)
     } else {
       this.res.end()
     }

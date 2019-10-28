@@ -1,13 +1,13 @@
 import { Injectable, Inject, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
 import { LOGGER, Logger } from '../common/logger'
-import { IncomingRequest, MockResponse } from '../mock/Mock'
+import { IncomingRequest, Match } from '../mock/Mock'
 import { MOCK_STORE } from '../mock/store/Store.provider'
 import { MockStore, BEGIN_VERSION } from '../mock/store/Store'
 import { Subscription } from 'rxjs'
 import { InMemoryMatcher } from '../mock/InMemoryMatcher'
 
 export interface HTTPHandler {
-  mockResponse (request: IncomingRequest, result: MockResponse): Promise<void>
+  mockResponse (request: IncomingRequest, result: Match): Promise<void>
   undecided (request: IncomingRequest, mockIds: string[]): Promise<void>
   passTrough (request: IncomingRequest): Promise<void>
 }
@@ -32,7 +32,7 @@ export class HTTPInterceptor implements OnModuleInit, OnModuleDestroy {
     } else if (result.length === 1) {
       await handler.mockResponse(request, result[0])
     } else {
-      await handler.undecided(request, result.map(resp => resp.mockId))
+      await handler.undecided(request, result.map(resp => resp.id))
     }
   }
 
