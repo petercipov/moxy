@@ -1,6 +1,6 @@
 import { InMemoryMatcher } from '../../../src/modules/mock/InMemoryMatcher'
 import { BEGIN_VERSION } from '../../../src/modules/mock/store/Store'
-import { VALID_FULL_DIFF, INVALID_FULL_DIFF, VALID_INCREMENTAL_DIFF, VALID_INCREMENTAL_DIFF_2, VALID_INCREMENTAL_PURGE, VALID_INCREMENTAL_PURGE_GROUP } from './fixtures'
+import { VALID_FULL_DIFF, INVALID_FULL_DIFF, VALID_INCREMENTAL_DIFF, VALID_INCREMENTAL_DIFF_2, VALID_INCREMENTAL_PURGE, VALID_INCREMENTAL_PURGE_GROUP, UNKNOWN_MOCK_PURGE_DIFF } from './fixtures'
 import { JSON_API_REQUEST } from './matchers/fixtures'
 
 describe('In Memory Matcher', () => {
@@ -70,8 +70,8 @@ describe('In Memory Matcher', () => {
     })
   })
 
-  describe('deleting', () => {
-    test('mock can be deleted', async () => {
+  describe('purging', () => {
+    test('mock can be purged', async () => {
       matcher.applyDiff(VALID_INCREMENTAL_DIFF)
       matcher.applyDiff(VALID_INCREMENTAL_PURGE)
 
@@ -81,7 +81,7 @@ describe('In Memory Matcher', () => {
 
     })
 
-    test('mock group can be deleted', async () => {
+    test('mock group can be purged', async () => {
       matcher.applyDiff(VALID_INCREMENTAL_DIFF)
       matcher.applyDiff(VALID_INCREMENTAL_PURGE_GROUP)
 
@@ -89,6 +89,24 @@ describe('In Memory Matcher', () => {
 
       expect(responses.length).toEqual(0)
 
+    })
+
+    test('unknown mock purge will be ommited', async () => {
+      matcher.applyDiff(VALID_INCREMENTAL_DIFF)
+      matcher.applyDiff(UNKNOWN_MOCK_PURGE_DIFF)
+
+      const responses = await matcher.match(JSON_API_REQUEST)
+
+      expect(responses.length).toEqual(1)
+    })
+
+    test('unknown mock group purge will be ommited', async () => {
+      matcher.applyDiff(VALID_INCREMENTAL_DIFF)
+      matcher.applyDiff(UNKNOWN_MOCK_PURGE_DIFF)
+
+      const responses = await matcher.match(JSON_API_REQUEST)
+
+      expect(responses.length).toEqual(1)
     })
   })
 })

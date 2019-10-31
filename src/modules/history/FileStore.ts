@@ -1,4 +1,4 @@
-import { IncomingRequest, MockResponse } from '../mock/Mock'
+import { IncomingRequest, Match } from '../mock/Mock'
 import { appendFile, readDir, readFile, deleteFile, filePath, writeFile } from '../common/files'
 import { MockHistoryRecord, MockHistoryRequest, HistoryStore } from './Store'
 
@@ -9,7 +9,7 @@ export class FileStore implements HistoryStore {
     readonly requestsPath: string
   ) {}
 
-  async storeHistory (request: IncomingRequest, response: MockResponse, now: Date): Promise<void> {
+  async storeHistory (request: IncomingRequest, match: Match, now: Date): Promise<void> {
     const requestId = request.id
     const record: MockHistoryRecord = {
       requestId,
@@ -18,13 +18,13 @@ export class FileStore implements HistoryStore {
 
     const reqRecord: MockHistoryRequest = {
       date: now.toISOString(),
-      mockId: response.mockId,
+      mockId: match.id,
       request,
-      response
+      response: match.response
     }
 
     await appendFile(
-      this.historyPath(response.mockId),
+      this.historyPath(match.id),
       JSON.stringify(record)
     )
 

@@ -1,4 +1,4 @@
-import { IncomingRequest, MockResponse } from '../mock/Mock'
+import { IncomingRequest, MockResponse, Match } from '../mock/Mock'
 
 export interface MockHistoryRecord {
   date: string
@@ -13,7 +13,7 @@ export interface MockHistoryRequest {
 }
 
 export interface HistoryStore {
-  storeHistory (request: IncomingRequest, response: MockResponse, now: Date): Promise<void>
+  storeHistory (request: IncomingRequest, match: Match, now: Date): Promise<void>
   loadHistoryIds (): Promise<string[]>
   loadHistory (mockId: string): Promise<MockHistoryRecord[]>
   deleteHistory (mockId: string): Promise<void>

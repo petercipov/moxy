@@ -16,24 +16,18 @@ export const INVALID_FULL_DIFF: MocksDiff = {
   def: VALID_DEF
 }
 
-export const VALID_FULL_DIFF: MocksDiff = {
+export const VALID_FULL_DIFF: MocksDiff = nextVersionOf(BEGIN_VERSION, {
   type: 'full',
-  startVersion: BEGIN_VERSION,
-  endVersion: BEGIN_VERSION + 1,
   def: VALID_DEF
-}
+})
 
-export const VALID_INCREMENTAL_DIFF: MocksDiff = {
+export const VALID_INCREMENTAL_DIFF: MocksDiff = nextVersionOf(BEGIN_VERSION, {
   type: 'incremental',
-  startVersion: BEGIN_VERSION,
-  endVersion: BEGIN_VERSION + 1,
   def: VALID_DEF
-}
+})
 
-export const VALID_INCREMENTAL_PURGE: MocksDiff = {
+export const VALID_INCREMENTAL_PURGE: MocksDiff = nextVersionOf(VALID_INCREMENTAL_DIFF, {
   type: 'incremental',
-  startVersion: VALID_INCREMENTAL_DIFF.endVersion,
-  endVersion: VALID_INCREMENTAL_DIFF.endVersion + 1,
   def: {
     created: [],
     purged: [
@@ -41,12 +35,10 @@ export const VALID_INCREMENTAL_PURGE: MocksDiff = {
     ],
     purgedGroups: []
   }
-}
+})
 
-export const VALID_INCREMENTAL_PURGE_GROUP: MocksDiff = {
+export const VALID_INCREMENTAL_PURGE_GROUP: MocksDiff = nextVersionOf(VALID_INCREMENTAL_DIFF, {
   type: 'incremental',
-  startVersion: VALID_INCREMENTAL_DIFF.endVersion,
-  endVersion: VALID_INCREMENTAL_DIFF.endVersion + 1,
   def: {
     created: [],
     purged: [],
@@ -54,11 +46,44 @@ export const VALID_INCREMENTAL_PURGE_GROUP: MocksDiff = {
       VALID_INCREMENTAL_DIFF.def.created[0].groupId
     ]
   }
-}
+})
 
-export const VALID_INCREMENTAL_DIFF_2: MocksDiff = {
+export const VALID_INCREMENTAL_DIFF_2: MocksDiff = nextVersionOf(VALID_INCREMENTAL_DIFF, {
   type: 'incremental',
-  startVersion: VALID_INCREMENTAL_DIFF.endVersion,
-  endVersion: VALID_INCREMENTAL_DIFF.endVersion + 1,
   def: VALID_DEF
+})
+
+export const UNKNOWN_MOCK_PURGE_DIFF = nextVersionOf(VALID_INCREMENTAL_DIFF, {
+  type: 'incremental',
+  def: {
+    created:[],
+    purgedGroups: [],
+    purged: [
+      'unknown id'
+    ]
+  }
+})
+
+export const UNKNOWN_MOCK_GROUP_PURGE_DIFF = nextVersionOf(VALID_INCREMENTAL_DIFF, {
+  type: 'incremental',
+  def: {
+    created:[],
+    purgedGroups: [
+      'unknown id'
+    ],
+    purged: []
+  }
+})
+
+function nextVersionOf(diff: any, next: Omit<MocksDiff, 'startVersion' | 'endVersion'>): MocksDiff {
+  const { def, type } = next
+  
+  const version = diff.endVersion ? diff.endVersion : diff
+  
+  return {
+    def,
+    type,
+    startVersion: version,
+    endVersion: version + 1
+  }
 }
