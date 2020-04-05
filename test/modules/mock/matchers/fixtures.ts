@@ -84,7 +84,7 @@ export const JSON_REQUEST_MOCK: Mock = {
   id: 'some json mock id',
   groupId: 'some json mock group id',
   host: 'petstore.swagger.io',
-  pattern: {
+  request: {
     url: JSON_API_URL_MATCH_PATTERN
   },
   response: {

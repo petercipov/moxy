@@ -2,8 +2,8 @@ import { ApiUseTags, ApiModelProperty, ApiOkResponse, ApiNotFoundResponse } from
 import { Controller, Get, Param } from '@nestjs/common'
 import { IncomingHttpHeaders, OutgoingHttpHeaders } from 'http'
 import { IncomingURL } from '../mock/matchers/UrlMatcher'
-import { IsPositive, ValidateNested, IsDateString, IsDefined, IsString, IsEnum, IsOptional } from 'class-validator'
-import { MockResponse } from '../mock/Mock'
+import { IsPositive, ValidateNested, IsDateString, IsDefined, IsString } from 'class-validator'
+import { MockResponseDto } from './mock.controller'
 
 const EXAMPLE_METHOD = 'POST'
 const EXAMPLE_SCHEME = 'http'
@@ -65,13 +65,12 @@ const EXAMPLE_REQ: IncomingRequestDto = {
 
 const EXAMPLE_RESP: MockResponseDto = {
   type: 'static',
-  mockId: EXAMPLE_UUID,
   status: 404,
   headers: EXAMPLE_RESP_HEADERS,
   body: EXAMPLE_RESP_BODY
 }
 
-const EXAMPLE_MOCKED_REQ_DTO: RequestDto = {
+const EXAMPLE_MOCKED_REQ_DTO: RequestLogDto = {
   date: EXAMPLE_DATE,
   request: EXAMPLE_REQ,
   response: EXAMPLE_RESP
@@ -129,31 +128,7 @@ export class IncomingRequestDto {
   body: IncomingBodyDto
 }
 
-export class MockResponseDto implements MockResponse {
-
-  @ApiModelProperty({ example: 'static', type: 'string', enum: ['static'] })
-  @IsEnum(['static'])
-  type: 'static'
-
-  @ApiModelProperty({ example: EXAMPLE_UUID })
-  @IsString()
-  mockId: string
-
-  @ApiModelProperty({ example: 404 })
-  @IsPositive()
-  status: number
-
-  @ApiModelProperty({ example: EXAMPLE_RESP_HEADERS, required: false })
-  @IsOptional()
-  headers?: OutgoingHttpHeaders
-
-  @ApiModelProperty({ example: EXAMPLE_RESP_BODY, required: false })
-  @IsOptional()
-  @IsString()
-  body?: string
-}
-
-export class RequestDto {
+export class RequestLogDto {
 
   @IsDateString()
   @ApiModelProperty({ example: EXAMPLE_DATE })
@@ -173,9 +148,9 @@ export class RequestDto {
 export class RequestController {
 
   @Get('/:requestId')
-  @ApiOkResponse({ type: RequestDto })
+  @ApiOkResponse({ type: RequestLogDto })
   @ApiNotFoundResponse({})
-  async getRequest (@Param('requestId') requestId: string): Promise<RequestDto> {
+  async getRequest (@Param('requestId') requestId: string): Promise<RequestLogDto> {
     console.log(requestId)
     return EXAMPLE_MOCKED_REQ_DTO
   }

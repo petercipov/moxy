@@ -6,8 +6,9 @@ import { IsUUID, IsString, Equals, ValidateNested, IsOptional, IsPositive, IsEnu
 import { UrlPattern } from '../mock/matchers/UrlMatcher'
 import { StringPattern, RegexpPattern, KeyStringPattern, KeyRegexpPattern } from '../mock/matchers/Patterns'
 import { OutgoingHttpHeaders } from 'http'
+import v4 from 'uuid/v4'
 
-const EXAMPLE_UUID = 'c9994761-d1fd-4ce4-bc0b-c05301b2f3a3'
+const EXAMPLE_UUID = 'a9994761-d1fd-4ce4-bc0b-c05301b2f3a3'
 
 const EXAMPLE_QUERY_DTO: KeyCombinedPatternDto[] = [
   { type: 'string', key: 'follows', value: '12345' },
@@ -38,7 +39,7 @@ const EXAMPLE_BODY_DTO: CombinedPatternDto = { type: 'string', value:
   "complete": false
 }`}
 
-const EXAMPLE_MOCK_REQUEST: RequestPatternDto = {
+const EXAMPLE_MOCK_REQUEST: MockRequestDto = {
   url: EXAMPLE_URL_PATTERN_DTO,
   body: EXAMPLE_BODY_DTO,
   headers: EXAMPLE_HEADERS_DTO
@@ -58,7 +59,6 @@ const EXAMPLE_RESPONSE_HEADERS = {
 const EXAMPLE_MOCK_RESPONSE: MockResponseDto = {
   type: 'static',
   status: 200,
-  mockId: EXAMPLE_UUID,
   body: EXAMPLE_BODY_RAW,
   headers: EXAMPLE_RESPONSE_HEADERS
 }
@@ -154,7 +154,7 @@ export class UrlPatternDto implements UrlPattern {
   query?: KeyCombinedPatternDto[]
 }
 
-export class RequestPatternDto implements RequestPattern {
+export class MockRequestDto implements RequestPattern {
   @IsOptional()
   @ValidateNested()
   @ApiModelProperty({
@@ -183,17 +183,13 @@ export class RequestPatternDto implements RequestPattern {
 }
 
 export class MockResponseDto implements MockResponse {
-  @ApiModelProperty({ example: 'static', enum: ['static'] })
+  @ApiModelProperty({ example: 'static', enum: ['static'], type: 'string' })
   @Equals('static')
   type: 'static'
 
   @ApiModelProperty({ example: 200 })
   @IsPositive()
   status: number
-
-  @ApiModelProperty({ example: EXAMPLE_UUID })
-  @IsString()
-  mockId: string
 
   @ApiModelProperty({ example: EXAMPLE_RESPONSE_HEADERS, required: false })
   @IsOptional()
@@ -208,11 +204,13 @@ export class MockResponseDto implements MockResponse {
 export class MockDto implements Mock {
 
   @IsUUID('4')
-  @ApiModelProperty({ example: 'c9994761-d1fd-4ce4-bc0b-c05301b2f3a3' })
+  @ApiModelProperty({ example: EXAMPLE_UUID, required: false })
+  @IsOptional()
   id: string
 
   @IsUUID('4')
-  @ApiModelProperty({ example: '147d9a1c-b74a-49c3-ae80-12dfc3c5cb24' })
+  @ApiModelProperty({ example: EXAMPLE_UUID, required: false })
+  @IsOptional()
   groupId: string
 
   @IsString()
@@ -221,7 +219,7 @@ export class MockDto implements Mock {
 
   @ValidateNested()
   @ApiModelProperty({ example: EXAMPLE_MOCK_REQUEST })
-  pattern: RequestPatternDto
+  request: MockRequestDto
 
   @ValidateNested()
   @ApiModelProperty({ example: EXAMPLE_MOCK_RESPONSE })
@@ -231,14 +229,14 @@ export class MockDto implements Mock {
 export class MockQuery {
   @IsOptional()
   @IsUUID('4')
-  @ApiModelProperty({ example: 'c9994761-d1fd-4ce4-bc0b-c05301b2f3a3', required: false })
+  @ApiModelProperty({ example: EXAMPLE_UUID, required: false })
   groupId?: string
 }
 
 export class MockList {
   @ValidateNested()
   @ApiModelProperty({
-    example: [ 'c9994761-d1fd-4ce4-bc0b-c05301b2f3a3' ],
+    example: [ EXAMPLE_UUID ],
     required: true,
     isArray: true,
     type: String
@@ -267,6 +265,8 @@ export class MockController {
   @Post('/')
   @ApiOkResponse({})
   create (@Body() mockDto: MockDto) {
+    mockDto.id = mockDto.id || v4()
+    mockDto.groupId = mockDto.groupId || v4()
     console.log(JSON.stringify(mockDto, null, 3))
   }
 

@@ -1,4 +1,4 @@
-import { InMemoryMatcher } from '../../../src/modules/mock/InMemoryMatcher'
+import { InMemoryMatcher } from '../../../src/modules/mock/matchers/InMemoryMatcher'
 import { BEGIN_VERSION } from '../../../src/modules/mock/store/Store'
 import { VALID_FULL_DIFF, INVALID_FULL_DIFF, VALID_INCREMENTAL_DIFF, VALID_INCREMENTAL_DIFF_2, VALID_INCREMENTAL_PURGE, VALID_INCREMENTAL_PURGE_GROUP, UNKNOWN_MOCK_PURGE_DIFF } from './fixtures'
 import { JSON_API_REQUEST } from './matchers/fixtures'

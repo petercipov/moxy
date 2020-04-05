@@ -10,7 +10,7 @@ export interface Mock {
   readonly id: MockId,
   readonly groupId: MockGroupId,
   readonly host: string,
-  readonly pattern: RequestPattern,
+  readonly request: RequestPattern,
   readonly response: MockResponse,
 }
 
@@ -41,7 +41,7 @@ export class MockHandler {
   private readonly response: MockResponse
 
   constructor (mock: Mock) {
-    this.matcher = compileMatcher(mock.pattern)
+    this.matcher = compileMatcher(mock.request)
     this.response = mock.response
     this.id = mock.id
     this.groupId = mock.groupId

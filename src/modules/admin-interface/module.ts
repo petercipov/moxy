@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common'
 import { MockController } from './mock.controller'
 import { HistoryController } from './history.controller'
-import { RequestController } from './request.controller copy'
+import { RequestController } from './request.controller'
 
 @Global()
 @Module({

@@ -1,5 +1,5 @@
-import { IncomingRequest, MockHandler, Mock, Match } from './Mock'
-import { MocksDiff, BEGIN_VERSION, VERSION } from './store/Store'
+import { IncomingRequest, MockHandler, Mock, Match } from '../Mock'
+import { MocksDiff, BEGIN_VERSION, VERSION } from '../store/Store'
 
 type MockDefinition = { handler: MockHandler, mock: Mock }
 

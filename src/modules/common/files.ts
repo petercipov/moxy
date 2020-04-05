@@ -49,6 +49,15 @@ export function readFile (path: string): Promise<string> {
   })
 }
 
+export async function writeJSON (path: string, obj: any): Promise<void> {
+  return writeFile(path, JSON.stringify(obj, null, 2))
+}
+
+export async function readJSON (path: string): Promise<any> {
+  const raw = await readFile(path)
+  return JSON.parse(raw)
+}
+
 export function deleteFile (path: string): Promise<void> {
   return new Promise((resolve, reject) => {
     fs.unlink(path, (err) => {

@@ -1,4 +1,3 @@
-import { Observable } from 'rxjs'
 import { Mock } from '../Mock'
 
 export type VERSION = number
@@ -19,9 +18,14 @@ export interface MocksDiff {
   startVersion: VERSION
   endVersion: VERSION
 }
+export interface Descriptor {
+  lastFullDiff: VERSION
+  lastIncrementalDiff: VERSION
+}
 
-export interface MockStore {
-  load (version: VERSION): Promise<MocksDiff[]>
-  save (def: MockDefinition): Promise<VERSION>
-  observeChanges (): Observable<VERSION>
+export interface Store {
+  load (descriptor: Descriptor): Promise<MocksDiff[]>
+  saveIncremental (def: MockDefinition): Promise<VERSION>
+  saveFull (def: MockDefinition): Promise<VERSION>
+  getLastVersion (): Promise<Descriptor>
 }

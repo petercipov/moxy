@@ -1,13 +1,16 @@
 import { Global, Module } from '@nestjs/common'
 import { mockStoreProvider } from './store/Store.provider'
+import { matcherProvider } from './matchers/Matcher.provider'
 
 @Global()
 @Module({
   providers: [
-    mockStoreProvider
+    mockStoreProvider,
+    matcherProvider
   ],
   exports: [
-    mockStoreProvider
+    mockStoreProvider,
+    matcherProvider
   ]
 })
 export class MockModule {
