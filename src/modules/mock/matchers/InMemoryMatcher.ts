@@ -1,12 +1,12 @@
 import { IncomingRequest, MockHandler, Mock, Match } from '../Mock'
-import { MocksDiff, BEGIN_VERSION, VERSION } from '../store/Store'
+import { MocksDiff, BEGIN_VERSION, VERSION, MockDefinition } from '../store/Store'
 
-type MockDefinition = { handler: MockHandler, mock: Mock }
+type Handler = { handler: MockHandler, mock: Mock }
 
 export class InMemoryMatcher {
   private version: VERSION = BEGIN_VERSION
 
-  private definitions = new Map<string, MockDefinition>()
+  private handlers = new Map<string, Handler>()
   private groupIndex = new GroupIndex()
 
   getVersion (): number {
@@ -17,7 +17,7 @@ export class InMemoryMatcher {
     const currentVersion = this.getVersion()
     const startVersionCheck = definitions.type === 'full'
       ? definitions.startVersion === BEGIN_VERSION
-      : definitions.startVersion === currentVersion
+      : definitions.startVersion >= currentVersion
 
     const endVersionCheck = definitions.endVersion > currentVersion
 
@@ -38,8 +38,16 @@ export class InMemoryMatcher {
     return true
   }
 
+  fullDiff (): MockDefinition {
+    return {
+      purged: [],
+      purgedGroups: [],
+      created: [ ...this.handlers.values() ].map(handler => handler.mock)
+    }
+  }
+
   private createMock (mock: Mock) {
-    this.definitions.set(mock.id, {
+    this.handlers.set(mock.id, {
       mock,
       handler: new MockHandler(mock)
     })
@@ -48,12 +56,12 @@ export class InMemoryMatcher {
   }
 
   private purgeMock (mockId: string) {
-    const definition = this.definitions.get(mockId)
+    const definition = this.handlers.get(mockId)
 
     if (definition) {
       const { id, groupId } = definition.mock
       this.groupIndex.delete(groupId, id)
-      this.definitions.delete(id)
+      this.handlers.delete(id)
     }
   }
 
@@ -66,7 +74,7 @@ export class InMemoryMatcher {
   async match (req: IncomingRequest): Promise<Match[]> {
     const matches: Match[] = []
 
-    for (let def of this.definitions.values()) {
+    for (let def of this.handlers.values()) {
       const match = await def.handler.handle(req)
       if (match) {
         matches.push(match)

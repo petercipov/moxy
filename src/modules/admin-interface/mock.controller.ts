@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Delete, Param, Get, Query } from '@nestjs/common'
+import { Controller, Post, Body, Delete, Param, Get, Query, NotFoundException } from '@nestjs/common'
 import { ApiUseTags, ApiModelProperty, ApiOkResponse, ApiNotFoundResponse } from '@nestjs/swagger'
 import { Mock, MockResponse } from '../mock/Mock'
 import { RequestPattern } from '../mock/matchers/RequestMatcher'
@@ -7,6 +7,7 @@ import { UrlPattern } from '../mock/matchers/UrlMatcher'
 import { StringPattern, RegexpPattern, KeyStringPattern, KeyRegexpPattern } from '../mock/matchers/Patterns'
 import { OutgoingHttpHeaders } from 'http'
 import v4 from 'uuid/v4'
+import { MockManager } from '../mock/MockManager'
 
 const EXAMPLE_UUID = 'a9994761-d1fd-4ce4-bc0b-c05301b2f3a3'
 
@@ -244,15 +245,36 @@ export class MockList {
   mockIds: string[]
 }
 
+export class MockCreateResponse {
+  @IsUUID('4')
+  @ApiModelProperty({ example: EXAMPLE_UUID })
+  @IsOptional()
+  id: string
+
+  @IsUUID('4')
+  @ApiModelProperty({ example: EXAMPLE_UUID })
+  @IsOptional()
+  groupId: string
+}
+
 @ApiUseTags('Mock')
 @Controller('/mock')
 export class MockController {
 
+  constructor (
+    private readonly mockManager: MockManager
+  ) {}
+
   @Get('/:id')
   @ApiOkResponse({ type: MockDto })
   @ApiNotFoundResponse({})
-  get (@Param('id') id: string) {
-    console.log(id)
+  async get (@Param('id') id: string): Promise<Mock> {
+    const result = await this.mockManager.getMock(id)
+    if (result) {
+      return result;
+    }
+
+    throw new NotFoundException();
   }
 
   @Get('/')
@@ -263,11 +285,17 @@ export class MockController {
   }
 
   @Post('/')
-  @ApiOkResponse({})
-  create (@Body() mockDto: MockDto) {
+  @ApiOkResponse({ type: MockCreateResponse })
+  async create (@Body() mockDto: MockDto): Promise<MockCreateResponse> {
     mockDto.id = mockDto.id || v4()
     mockDto.groupId = mockDto.groupId || v4()
-    console.log(JSON.stringify(mockDto, null, 3))
+
+    await this.mockManager.storeMock(mockDto);
+
+    return {
+      id: mockDto.id,
+      groupId: mockDto.groupId
+    }
   }
 
   @Delete('/:id')

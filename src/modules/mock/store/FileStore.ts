@@ -1,5 +1,6 @@
 import { Store, MocksDiff, MockDefinition, Descriptor, VERSION, BEGIN_VERSION } from './Store'
-import { readDir, filePath, writeJSON, readJSON } from '../../common/files'
+import { readDir, filePath, writeJSON, readJSON, linkFile } from '../../common/files'
+import { MockId } from '../Mock'
 
 const ZERO_MOCK_DIFF: MocksDiff = {
   type: 'full',
@@ -17,8 +18,18 @@ export class FileStore implements Store {
   constructor (
         readonly path: string,
         readonly incrementalPath: string,
-        readonly fullPath: string
+        readonly fullPath: string,
+        readonly indexPath: string
     ) {}
+
+  async lookup(id: MockId): Promise<MocksDiff | undefined> {
+    try {
+      return await readJSON(filePath(this.indexPath, id))
+    } catch(ex) {
+      return undefined;
+    }
+  }
+
 
   async load (descriptor: Descriptor): Promise<MocksDiff[]> {
     const incList = await readDir(this.incrementalPath)
@@ -55,8 +66,17 @@ export class FileStore implements Store {
       endVersion: version
     }
 
-    await writeJSON(filePath(this.incrementalPath, `${version}.json`), diff)
+    const incrementFile = filePath(this.incrementalPath, `${version}.json`);
+
+    await writeJSON(incrementFile, diff)
     await writeJSON(filePath(this.path, `incremental.json`), { version })
+
+    await Promise.all(def.created
+      .map(mock => mock.id)
+      .map(id => {
+        const indexFile = filePath(this.indexPath, id);
+        return linkFile(incrementFile, indexFile)
+      }))
 
     return version
   }

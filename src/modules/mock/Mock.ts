@@ -14,6 +14,10 @@ export interface Mock {
   readonly response: MockResponse,
 }
 
+export function mockEquals(id1: MockId, id2: MockId): boolean {
+  return id1 === id2;
+}
+
 export interface MockResponse {
   type: 'static',
   status: number,

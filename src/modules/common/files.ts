@@ -49,6 +49,18 @@ export function readFile (path: string): Promise<string> {
   })
 }
 
+export function linkFile (path: string, linkPath: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    fs.link(path, linkPath, (err => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(linkPath)
+      }
+    }))
+  })
+}
+
 export async function writeJSON (path: string, obj: any): Promise<void> {
   return writeFile(path, JSON.stringify(obj, null, 2))
 }

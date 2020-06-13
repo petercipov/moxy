@@ -1,4 +1,4 @@
-import { Mock } from '../Mock'
+import { Mock, MockId } from '../Mock'
 
 export type VERSION = number
 
@@ -18,14 +18,24 @@ export interface MocksDiff {
   startVersion: VERSION
   endVersion: VERSION
 }
+
 export interface Descriptor {
   lastFullDiff: VERSION
   lastIncrementalDiff: VERSION
 }
 
 export interface Store {
+  lookup(id: MockId): Promise<MocksDiff | undefined>
   load (descriptor: Descriptor): Promise<MocksDiff[]>
   saveIncremental (def: MockDefinition): Promise<VERSION>
   saveFull (def: MockDefinition): Promise<VERSION>
   getLastVersion (): Promise<Descriptor>
+}
+
+export function newMockDefinition (mock: Mock): MockDefinition {
+  return {
+    created: [mock],
+    purged: [],
+    purgedGroups: []
+  }
 }
